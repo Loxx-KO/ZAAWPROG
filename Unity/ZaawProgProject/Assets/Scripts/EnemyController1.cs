@@ -14,21 +14,26 @@ enum EnemyActions
 public class EnemyController1 : MonoBehaviour
 {
     [Header("Components")]
-    public Slider HP_Slider;
-    public PlayerController PlayerController;
+    public Animator Animator;
 
     [Header("Turn variables")]
     private bool EnemyTurn = false;
 
     [Header("Stats")]
-    [SerializeField] private int MaxHP = 50;
-    private int currentHP;
+    [SerializeField] public int MaxHP = 50;
+    public int currentHP;
     [SerializeField] private int baseDmg = 5;
     private bool ShieldUp = false;
 
-    void Start()
+    void Awake()
     {
+        MaxHP = 50;
         currentHP = MaxHP;
+    }
+
+    public void SetAniumationToIdle()
+    {
+        Animator.Play("Idle");
     }
 
     public void TakeDmg(int dmg)
@@ -43,20 +48,20 @@ public class EnemyController1 : MonoBehaviour
 
         if (currentHP <= 0)
         {
+            Animator.Play("Death");
             currentHP = 0;
             Debug.Log("Enemy died");
-            PlayerController.GainPoints();
+            FindObjectOfType<PlayerController>().GainPoints();
             SetUpNewEnemy();
         }
-        HP_Slider.value = currentHP;
     }
 
     private void SetUpNewEnemy()
     {
+        Animator.Play("Recover");
         MaxHP = UnityEngine.Random.Range(40, 70);
         baseDmg = UnityEngine.Random.Range(4, 10);
         currentHP = MaxHP;
-        HP_Slider.value = currentHP;
     }
 
     private void ShieldPutDown()
@@ -72,6 +77,7 @@ public class EnemyController1 : MonoBehaviour
     //Animation events
     public int Attack()
     {
+        Animator.Play("Attack");
         ShieldPutDown();
         return baseDmg + UnityEngine.Random.Range(0, 1) * UnityEngine.Random.Range(0, 10);
     }
@@ -92,7 +98,7 @@ public class EnemyController1 : MonoBehaviour
                 default: break;
             }
             EnemyTurn = false;
-            PlayerController.SetPlayerTurn();
+            FindObjectOfType<PlayerController>().SetPlayerTurn();
         }
     }
 }

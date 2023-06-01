@@ -8,8 +8,7 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Components")]
     public CaptureManager captureManager;
-    public Slider HP_Slider;
-    public EnemyController1 EnemyController;
+    public Animator Animator;
 
     [Header("Turn Variables")]
     private bool PlayersTurn = false;
@@ -20,21 +19,22 @@ public class PlayerController : MonoBehaviour
     public Button healButton;
 
     [Header("Stats")]
-    [SerializeField] private int MaxHP = 100;
-    private int currentHP;
-    [SerializeField] private int HealTurnCount = 0;
+    [SerializeField] public int MaxHP = 100;
+    public int currentHP;
     [SerializeField] private int baseDmg = 10;
     private bool ShieldUp = false;
     public int EnemiesDefeated = 0;
 
-    void Start()
+    void Awake()
     {
+        MaxHP = 100;
         currentHP = MaxHP;
     }
 
     public void TakeDmg(int dmg)
     {
-        if(ShieldUp)
+        Animator.Play("Hurt");
+        if (ShieldUp)
         {
             currentHP -= dmg / 2;
         }
@@ -47,7 +47,6 @@ public class PlayerController : MonoBehaviour
             currentHP = 0;
             Debug.Log("Player died");
         }
-        HP_Slider.value = currentHP;
     }
 
     private void ShieldPutDown()
@@ -68,30 +67,33 @@ public class PlayerController : MonoBehaviour
 
         currentHP += 40;
         if (currentHP > MaxHP) currentHP = MaxHP;
-        HP_Slider.value = currentHP;
     }
 
     //Animation events
+    public void SetAnimationToIdle()
+    {
+        Animator.Play("Idle");
+        PlayersTurn = false;
+    }
+
     public int Attack()
     {
+        Animator.Play("Attack");
         ShieldPutDown();
-        HealTurnCount++;
         return baseDmg + UnityEngine.Random.Range(0,1) * UnityEngine.Random.Range(0,10);
     }
 
     public void Heal()
     {
-        HealTurnCount = 0;
+        Animator.Play("Recover");
         ShieldPutDown();
 
-        currentHP += 20;
+        currentHP += UnityEngine.Random.Range(0, 20);
         if(currentHP > MaxHP) currentHP = MaxHP;
-        HP_Slider.value = currentHP;
     }
 
     public void Defend()
     {
-        HealTurnCount++;
         ShieldUp = true;
     }
 
@@ -102,23 +104,28 @@ public class PlayerController : MonoBehaviour
             if(captureManager.palmFound || captureManager.fistFound || (captureManager.pointingLeftFound || captureManager.pointingRightFound))
             {
                 captureManager.CanTakePhotos = false;
-                EnemyController.SetEnemyTurn();
             }
 
             if (captureManager.palmFound)
             {
-                fightButton.gameObject.GetComponent<Animation>().Play();
-
+                Attack();
+                fightButton.gameObject.GetComponent<Animation>().Play("Click_Attack");
             }
             else if (captureManager.fistFound)
             {
-                defendButton.gameObject.GetComponent<Animation>().Play();
+                Defend();
+                defendButton.gameObject.GetComponent<Animation>().Play("Click_Defence");
 
             }
-            else if ((captureManager.pointingLeftFound || captureManager.pointingRightFound) && HealTurnCount == 2)
+            else if ((captureManager.pointingLeftFound || captureManager.pointingRightFound))
             {
-                healButton.gameObject.GetComponent<Animation>().Play();
+                Heal();
+                healButton.gameObject.GetComponent<Animation>().Play("Click_Heal");
             }
+        }
+        else
+        {
+            FindObjectOfType<EnemyController1>().SetEnemyTurn();
         }
     }
 }
