@@ -10,9 +10,12 @@ public class UI_Controller : MonoBehaviour
     [Header("Components")]
     public PlayerController playerController = null;
     public EnemyController1 enemyController = null;
+    public CaptureManager CaptureManager;
     public Slider sliderPlayer;
     public Slider sliderEnemy;
     public TMP_Text EnemiesKilledText;
+    public TMP_Text Timer;
+    public TMP_Text GameOverText;
 
     [Header("Variables")]
     float currentSliderValPlayer;
@@ -20,7 +23,7 @@ public class UI_Controller : MonoBehaviour
 
     float currentSliderValEnemy;
     float newSliderValueEnemy;
-    bool valuesInitialized = false;
+    [SerializeField] bool valuesInitialized = false;
 
     private void Start()
     {
@@ -59,7 +62,7 @@ public class UI_Controller : MonoBehaviour
     {
         if (currentSliderValPlayer > newSliderValuePlayer)
         {
-            currentSliderValPlayer -= Time.deltaTime * 10;
+            currentSliderValPlayer -= Time.deltaTime * newSliderValuePlayer;
             if (currentSliderValPlayer - newSliderValuePlayer < 0.5)
             {
                 currentSliderValPlayer = newSliderValuePlayer;
@@ -67,7 +70,7 @@ public class UI_Controller : MonoBehaviour
         }
         else if (currentSliderValPlayer < newSliderValuePlayer)
         {
-            currentSliderValPlayer += Time.deltaTime * 10;
+            currentSliderValPlayer += Time.deltaTime * newSliderValuePlayer;
             if (newSliderValuePlayer - currentSliderValPlayer < 0.5)
             {
                 currentSliderValPlayer = newSliderValuePlayer;
@@ -81,7 +84,7 @@ public class UI_Controller : MonoBehaviour
     {
         if (currentSliderValEnemy > newSliderValueEnemy)
         {
-            currentSliderValEnemy -= Time.deltaTime * 10;
+            currentSliderValEnemy -= Time.deltaTime * newSliderValuePlayer;
             if (currentSliderValEnemy - newSliderValueEnemy < 0.5)
             {
                 currentSliderValEnemy = newSliderValueEnemy;
@@ -89,7 +92,7 @@ public class UI_Controller : MonoBehaviour
         }
         else if (currentSliderValEnemy < newSliderValueEnemy)
         {
-            currentSliderValEnemy += Time.deltaTime * 10;
+            currentSliderValEnemy += Time.deltaTime * newSliderValuePlayer;
             if (newSliderValueEnemy - currentSliderValEnemy < 0.5)
             {
                 currentSliderValEnemy = newSliderValueEnemy;
@@ -101,19 +104,29 @@ public class UI_Controller : MonoBehaviour
         sliderEnemy.value = currentSliderValEnemy;
     }
 
-    private void SetTurnCount()
+    private void SetKillCount()
     {
         EnemiesKilledText.text = "Killed: " + playerController.EnemiesDefeated.ToString();
     }
 
     private void Update()
     {
-        if (valuesInitialized)
+        if (!GameVariables.GameEnded)
         {
-            CheckHPs();
-            UpdatePlayerSlider();
-            UpdateEnemySlider();
-            SetTurnCount();
+            if (valuesInitialized)
+            {
+                CheckHPs();
+                UpdatePlayerSlider();
+                UpdateEnemySlider();
+                SetKillCount();
+            }
+
+            Timer.text = "Timer: " + CaptureManager.CurrentTime.ToString();
+        }
+
+        if(GameVariables.GameEnded && !GameOverText.enabled)
+        {
+            GameOverText.enabled = true;
         }
     }
 }

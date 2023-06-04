@@ -16,15 +16,14 @@ public class EnemyController1 : MonoBehaviour
     [Header("Components")]
     public Animator Animator;
 
-    [Header("Turn variables")]
-    private bool EnemyTurn = false;
-
     [Header("Stats")]
     [SerializeField] public int MaxHP = 50;
     public int currentHP;
-    [SerializeField] private int baseDmg = 5;
+    [SerializeField] private int baseDmg = 10;
     private bool ShieldUp = false;
 
+    [Header("Particles")]
+    public ParticleSystem DefendParticles;
     void Awake()
     {
         MaxHP = 50;
@@ -38,6 +37,7 @@ public class EnemyController1 : MonoBehaviour
 
     public void TakeDmg(int dmg)
     {
+        Animator.Play("Hurt");
         if (ShieldUp)
         {
             currentHP -= dmg / 2;
@@ -52,6 +52,7 @@ public class EnemyController1 : MonoBehaviour
             currentHP = 0;
             Debug.Log("Enemy died");
             FindObjectOfType<PlayerController>().GainPoints();
+            FindObjectOfType<PlayerController>().SetPlayerTurn();
             SetUpNewEnemy();
         }
     }
@@ -67,37 +68,43 @@ public class EnemyController1 : MonoBehaviour
     private void ShieldPutDown()
     {
         ShieldUp = false;
+        StopDefendParticles();
     }
 
-    public void SetEnemyTurn()
-    {
-        EnemyTurn = true;
-    }
-
-    //Animation events
     public int Attack()
     {
         Animator.Play("Attack");
         ShieldPutDown();
-        return baseDmg + UnityEngine.Random.Range(0, 1) * UnityEngine.Random.Range(0, 10);
+        return baseDmg + UnityEngine.Random.Range(0, 1) * UnityEngine.Random.Range(1, 10);
     }
 
     public void Defend()
     {
         ShieldUp = true;
+        PlayDefendParticles();
+    }
+
+    //Animation events
+    public void PlayDefendParticles()
+    {
+        DefendParticles.Play();
+    }
+
+    public void StopDefendParticles()
+    {
+        DefendParticles.Stop();
     }
 
     private void Update()
     {
-        if(EnemyTurn)
+        if(!GameVariables.PlayerTurn && !GameVariables.GameEnded)
         {
-            switch ((EnemyActions)UnityEngine.Random.Range(0,1))
+            switch ((EnemyActions)UnityEngine.Random.Range(0,2))
             {
-                case EnemyActions.Attack: Attack(); break;
+                case EnemyActions.Attack: FindObjectOfType<PlayerController>().TakeDmg(Attack()); break;
                 case EnemyActions.Defend: Defend(); break;
                 default: break;
             }
-            EnemyTurn = false;
             FindObjectOfType<PlayerController>().SetPlayerTurn();
         }
     }

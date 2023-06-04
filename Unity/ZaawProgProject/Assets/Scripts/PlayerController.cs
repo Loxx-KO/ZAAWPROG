@@ -10,20 +10,21 @@ public class PlayerController : MonoBehaviour
     public CaptureManager captureManager;
     public Animator Animator;
 
-    [Header("Turn Variables")]
-    private bool PlayersTurn = false;
-
-    [Header("Buttons")]
-    public Button fightButton;
-    public Button defendButton;
-    public Button healButton;
+    [Header("Buttons animators")]
+    public Animator fightButtonAnim;
+    public Animator defendButtonAnim;
+    public Animator healButtonAnim;
 
     [Header("Stats")]
     [SerializeField] public int MaxHP = 100;
     public int currentHP;
-    [SerializeField] private int baseDmg = 10;
+    [SerializeField] private int baseDmg = 20;
     private bool ShieldUp = false;
     public int EnemiesDefeated = 0;
+
+    [Header("Particles")]
+    public ParticleSystem DefendParticles;
+    public ParticleSystem HealParticles;
 
     void Awake()
     {
@@ -46,18 +47,20 @@ public class PlayerController : MonoBehaviour
         {
             currentHP = 0;
             Debug.Log("Player died");
+            Animator.Play("Death");
+            GameVariables.GameEnded = true;
         }
     }
 
     private void ShieldPutDown()
     {
         ShieldUp = false;
+        StopDefendParticles();
     }
 
     public void SetPlayerTurn()
     {
-        PlayersTurn = true;
-        captureManager.ResetGestureRec();
+        GameVariables.PlayerTurn = true;
         captureManager.CanTakePhotos = true;
     }
 
@@ -69,24 +72,18 @@ public class PlayerController : MonoBehaviour
         if (currentHP > MaxHP) currentHP = MaxHP;
     }
 
-    //Animation events
-    public void SetAnimationToIdle()
-    {
-        Animator.Play("Idle");
-        PlayersTurn = false;
-    }
-
     public int Attack()
     {
         Animator.Play("Attack");
         ShieldPutDown();
-        return baseDmg + UnityEngine.Random.Range(0,1) * UnityEngine.Random.Range(0,10);
+        return baseDmg + UnityEngine.Random.Range(0,1) * UnityEngine.Random.Range(1,10);
     }
 
     public void Heal()
     {
         Animator.Play("Recover");
         ShieldPutDown();
+        PlayHealParticles();
 
         currentHP += UnityEngine.Random.Range(0, 20);
         if(currentHP > MaxHP) currentHP = MaxHP;
@@ -95,37 +92,59 @@ public class PlayerController : MonoBehaviour
     public void Defend()
     {
         ShieldUp = true;
+        PlayDefendParticles();
+    }
+
+    //Animation events
+    public void SetAnimationToIdle()
+    {
+        Animator.Play("Idle");
+    }
+
+    public void PlayDefendParticles()
+    {
+        DefendParticles.Play();
+    }
+
+    public void StopDefendParticles()
+    {
+        DefendParticles.Stop();
+    }
+
+    public void PlayHealParticles()
+    {
+        HealParticles.Play();
     }
 
     void Update()
     {
-        if (PlayersTurn)
+        if (GameVariables.PlayerTurn && !GameVariables.GameEnded)
         {
             if(captureManager.palmFound || captureManager.fistFound || (captureManager.pointingLeftFound || captureManager.pointingRightFound))
             {
+                if (captureManager.palmFound)
+                {
+                    Debug.Log("Attack!");
+                    fightButtonAnim.Play("Click");
+                    FindObjectOfType<EnemyController1>().TakeDmg(Attack());
+                }
+                else if (captureManager.fistFound)
+                {
+                    Debug.Log("Def!");
+                    defendButtonAnim.Play("Click");
+                    Defend();
+                }
+                else if ((captureManager.pointingLeftFound || captureManager.pointingRightFound))
+                {
+                    Debug.Log("Heal!");
+                    healButtonAnim.Play("Click");
+                    Heal();
+                }
+
                 captureManager.CanTakePhotos = false;
+                captureManager.ResetGestureRec();
+                GameVariables.PlayerTurn = false;
             }
-
-            if (captureManager.palmFound)
-            {
-                Attack();
-                fightButton.gameObject.GetComponent<Animation>().Play("Click_Attack");
-            }
-            else if (captureManager.fistFound)
-            {
-                Defend();
-                defendButton.gameObject.GetComponent<Animation>().Play("Click_Defence");
-
-            }
-            else if ((captureManager.pointingLeftFound || captureManager.pointingRightFound))
-            {
-                Heal();
-                healButton.gameObject.GetComponent<Animation>().Play("Click_Heal");
-            }
-        }
-        else
-        {
-            FindObjectOfType<EnemyController1>().SetEnemyTurn();
         }
     }
 }

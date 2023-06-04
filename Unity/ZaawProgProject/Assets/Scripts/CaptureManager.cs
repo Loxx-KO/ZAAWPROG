@@ -23,8 +23,8 @@ public class CaptureManager : MonoBehaviour
     private string filePath = "Assets/HandFiles/handPhoto.png";
 
     [Header("Timer")]
-    const float timer = 10.0f;
-    float currentTime = 10.0f;
+    public const float Timer = 7.0f;
+    public float CurrentTime { get; private set; }
 
     void Start()
     {
@@ -43,7 +43,7 @@ public class CaptureManager : MonoBehaviour
         {
             GetComponent<Renderer>().material.mainTexture = webCamTexture;
             webCamTexture.Play();
-            currentTime = timer;
+            CurrentTime = Timer;
         }
     }
 
@@ -186,14 +186,12 @@ public class CaptureManager : MonoBehaviour
 
         if (CanTakePhotos)
         {
-            currentTime -= Time.deltaTime;
-            if (currentTime < 0.2f)
-                Debug.Log("Get ready!");
+            CurrentTime -= Time.deltaTime;
 
-            if (currentTime < 0)
+            if (CurrentTime < 0)
             {
                 StartCoroutine(TakePhoto());
-                currentTime = timer;
+                CurrentTime = Timer;
             }
 
             if (isPhotoTaken)
